@@ -111,8 +111,8 @@ export const updateTableDataTool = {
   inputSchema: {
     database: z.string().describe('AF database path'),
     table: z.string().describe('Table name'),
-    columns: z.record(z.string()).describe('Column name -> type (Double, String, Int32, Boolean, DateTime)'),
-    rows: z.array(z.record(z.any())),
+    columns: z.record(z.string(), z.string()).describe('Column name -> type (Double, String, Int32, Boolean, DateTime)'),
+    rows: z.array(z.record(z.string(), z.any())),
     dryRun: DRY_RUN
   },
   async handler(args, context) {

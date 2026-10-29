@@ -99,7 +99,7 @@ export const elementDefSchema = z.lazy(() => z.object({
   template: z.string().optional().describe('Element template name'),
   categories: z.array(z.string()).optional(),
   attributes: z.array(attributeDefSchema).optional().describe('Extra attributes not defined by the template'),
-  attributeValues: z.record(z.any()).optional().describe('Static values to set on a NEWLY created element, keyed by attribute name (use A|B for child attributes)'),
+  attributeValues: z.record(z.string(), z.any()).optional().describe('Static values to set on a NEWLY created element, keyed by attribute name (use A|B for child attributes)'),
   analyses: z.array(analysisDefSchema).optional(),
   children: z.array(elementDefSchema).optional()
 }));
@@ -139,8 +139,8 @@ export const tableDefSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   categories: z.array(z.string()).optional(),
-  columns: z.record(z.string()).describe('Column name -> type, e.g. { "Load": "Double", "Model": "String", "Active": "Boolean", "Count": "Int32", "Time": "DateTime" }'),
-  rows: z.array(z.record(z.any())).default([])
+  columns: z.record(z.string(), z.string()).describe('Column name -> type, e.g. { "Load": "Double", "Model": "String", "Active": "Boolean", "Count": "Int32", "Time": "DateTime" }'),
+  rows: z.array(z.record(z.string(), z.any())).default([])
 });
 
 export const planSchema = z.object({
