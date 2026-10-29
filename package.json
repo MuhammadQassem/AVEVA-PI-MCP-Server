@@ -1,7 +1,7 @@
 {
   "name": "aveva-pisystem-mcp-server",
-  "version": "1.0.0",
-  "description": "Stateless, zero-trust MCP server for AVEVA PI System Web API",
+  "version": "1.1.0",
+  "description": "Stateless, zero-trust MCP server for AVEVA PI System Web API, with optional AF build and modify tools",
   "type": "module",
   "main": "src/main.js",
   "bin": {
@@ -24,14 +24,17 @@
   },
   "license": "Apache-2.0",
   "author": "Oscar Ortiz <oscar.ortiz@denginks.com>",
+  "contributors": [
+    "Muhammad Qassem <muhamadqassem94@gmail.com> (https://github.com/MuhammadQassem)"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Digital-Enginks/aveva-pisystem-mcp-server.git"
+    "url": "git+https://github.com/MuhammadQassem/AVEVA-PI-MCP-Server.git"
   },
   "bugs": {
-    "url": "https://github.com/Digital-Enginks/aveva-pisystem-mcp-server/issues"
+    "url": "https://github.com/MuhammadQassem/AVEVA-PI-MCP-Server/issues"
   },
-  "homepage": "https://github.com/Digital-Enginks/aveva-pisystem-mcp-server#readme",
+  "homepage": "https://github.com/MuhammadQassem/AVEVA-PI-MCP-Server#readme",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -40,6 +43,8 @@
     "pi-web-api",
     "osisoft",
     "historian",
+    "asset-framework",
+    "af",
     "industrial",
     "ot",
     "time-series"

@@ -2,3 +2,9 @@ AVEVA PI System MCP Server
 Copyright 2026 The AVEVA PI System MCP Server Authors
 
 Licensed under the Apache License, Version 2.0.
+
+This distribution (version 1.1.0 and later, https://github.com/MuhammadQassem/AVEVA-PI-MCP-Server)
+is a modified version of https://github.com/Digital-Enginks/aveva-pisystem-mcp-server.
+Modifications Copyright 2026 Muhammad Qassem: AF build and modify tools
+(src/controllers/tools/build/), related configuration, documentation and tests,
+and fixes to Negotiate challenge handling and error logging. See CHANGELOG.md.
