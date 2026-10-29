@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { handleMcpError } from '../errors/to-mcp.js';
+import { cleanText } from '../errors/sanitizer.js';
 
 const { version: packageVersion } = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
@@ -36,6 +37,10 @@ import { readSummaryMultiTool } from '../controllers/tools/data/read_summary_mul
 import { writeValueTool } from '../controllers/tools/write/write_value.js';
 import { writeValuesTool } from '../controllers/tools/write/write_values.js';
 import { writeValuesMultiTool } from '../controllers/tools/write/write_values_multi.js';
+
+// AF Build Tools (create-only)
+import { BUILD_TOOLS } from '../controllers/tools/build/build_tools.js';
+import { MODIFY_TOOLS } from '../controllers/tools/build/modify_tools.js';
 
 // Meta status
 import { serverStatusTool } from '../controllers/tools/meta/server_status.js';
@@ -82,6 +87,13 @@ const WRITE_ANNOTATIONS = Object.freeze({
   readOnlyHint: false,
   destructiveHint: true,
   idempotentHint: false,
+  openWorldHint: true
+});
+
+const BUILD_ANNOTATIONS = Object.freeze({
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
   openWorldHint: true
 });
 
@@ -140,7 +152,13 @@ export function buildServer(config, logger, idProvider, gateway, authContext = n
             correlationId
           });
         } catch (err) {
-          reqLogger.error('Tool execution failed', { error: err.message });
+          // Build/modify errors carry actionable messages (allow-list, missing template,
+          // invalid plan). Surface them as details, which the sanitizer still scrubs.
+          if (/^pi\.(build|modify)\./.test(tool.name) && err && typeof err === 'object' && !err.details && err.message) {
+            err.details = err.message;
+          }
+          // pino takes the context object FIRST; a trailing object is silently dropped.
+          reqLogger.error({ error: cleanText(err?.message || String(err)), category: err?.category }, 'Tool execution failed');
           return handleMcpError(err);
         }
       }
@@ -158,6 +176,20 @@ export function buildServer(config, logger, idProvider, gateway, authContext = n
   if (config.MCP_WRITE_TOOLS_ENABLED) {
     for (const tool of WRITE_TOOLS) {
       register(tool, WRITE_ANNOTATIONS, true);
+    }
+  }
+
+  // AF build tools are create-only (existing objects are skipped, never changed),
+  // so they are not destructive, but they are not read-only either.
+  if (config.MCP_BUILD_TOOLS_ENABLED && !config.MCP_READ_ONLY) {
+    for (const tool of BUILD_TOOLS) {
+      register(tool, BUILD_ANNOTATIONS, true);
+    }
+    // Modify tools change existing AF objects (never delete), so they are destructive.
+    if (config.MCP_MODIFY_TOOLS_ENABLED) {
+      for (const tool of MODIFY_TOOLS) {
+        register(tool, WRITE_ANNOTATIONS, true);
+      }
     }
   }
 

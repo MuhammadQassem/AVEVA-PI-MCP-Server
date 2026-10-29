@@ -102,6 +102,12 @@ export const configObjectSchema = z.object({
 
   MCP_READ_ONLY: envBooleanSchema.default(true),
   MCP_WRITE_TOOLS_ENABLED: envBooleanSchema.default(false),
+  // AF build tools (create-only: templates, elements, attributes, analyses, PI points).
+  // Independent of value writes; limited to the semicolon-separated database paths below.
+  MCP_BUILD_TOOLS_ENABLED: envBooleanSchema.default(false),
+  MCP_BUILD_ALLOWED_DATABASES: z.string().optional(),
+  // AF modify tools (change existing AF objects; never delete). Same database allow-list.
+  MCP_MODIFY_TOOLS_ENABLED: envBooleanSchema.default(false),
   MCP_ADMIN_IDENTITY_CONFIGURED: envBooleanSchema.default(false),
   MCP_MAX_RESPONSE_BYTES: z.coerce.number().int().positive().default(1048576),
 
@@ -252,6 +258,38 @@ export const configSchema = configObjectSchema.superRefine((data, ctx) => {
         code: z.ZodIssueCode.custom,
         path: ['MCP_READ_ONLY'],
         message: "MCP_READ_ONLY must be true when PIWEBAPI_AUTH_MODE is 'anonymous'"
+      });
+    }
+  }
+
+  if (data.MCP_MODIFY_TOOLS_ENABLED && !data.MCP_BUILD_TOOLS_ENABLED) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['MCP_MODIFY_TOOLS_ENABLED'],
+      message: 'MCP_MODIFY_TOOLS_ENABLED requires MCP_BUILD_TOOLS_ENABLED=true (it shares its safety settings)'
+    });
+  }
+
+  if (data.MCP_BUILD_TOOLS_ENABLED) {
+    if (data.MCP_READ_ONLY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MCP_BUILD_TOOLS_ENABLED'],
+        message: 'Cannot enable build tools when MCP_READ_ONLY is set to true'
+      });
+    }
+    if (data.MCP_TRANSPORT !== 'stdio') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MCP_BUILD_TOOLS_ENABLED'],
+        message: "Build tools are only supported over the 'stdio' transport"
+      });
+    }
+    if (!data.MCP_BUILD_ALLOWED_DATABASES || !data.MCP_BUILD_ALLOWED_DATABASES.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MCP_BUILD_ALLOWED_DATABASES'],
+        message: 'MCP_BUILD_ALLOWED_DATABASES must list at least one AF database path (e.g. \\\\Server\\Database)'
       });
     }
   }
