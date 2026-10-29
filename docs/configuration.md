@@ -92,6 +92,9 @@ Use this option only when other delegation or token-based protocols are unavaila
 ## 6. Gating & Feature Flags
 
 - `MCP_READ_ONLY`: Master read-only switch. Default is `true`. While `true`, the server refuses any configuration that enables writes. **To enable write tools you must set both `MCP_READ_ONLY=false` and `MCP_WRITE_TOOLS_ENABLED=true`** — setting only `MCP_WRITE_TOOLS_ENABLED=true` fails at startup. Anonymous outbound auth (`PIWEBAPI_AUTH_MODE=anonymous`) requires `MCP_READ_ONLY=true`.
+- `MCP_BUILD_TOOLS_ENABLED`: Set to `true` to list and execute the create-only AF build tools (`pi.build.*`). Default is `false`. Requires `MCP_READ_ONLY=false`, `MCP_TRANSPORT=stdio`, and `MCP_BUILD_ALLOWED_DATABASES`. Independent of `MCP_WRITE_TOOLS_ENABLED`. See [af-build-tools.md](af-build-tools.md).
+- `MCP_BUILD_ALLOWED_DATABASES`: Semicolon-separated AF database paths the build/modify tools may touch, e.g. `\\AFServer\Sandbox;\\AFServer\Plant_A`. `\\AFServer\*` allows every database on that AF server (including new ones). Units of measure may be created on any server that appears in this list.
+- `MCP_MODIFY_TOOLS_ENABLED`: Set to `true` to list and execute the AF modify tools (`pi.modify.*`), which change existing objects (never delete) and default to a dry run. Default is `false`. Requires `MCP_BUILD_TOOLS_ENABLED=true`.
 - `MCP_WRITE_TOOLS_ENABLED`: Set to `true` to list and execute write-capable tools. Default is `false`. Requires `MCP_READ_ONLY=false`; over the HTTP transport it additionally requires edge authentication (`MCP_EDGE_AUTH_MODE` ≠ `none`) and `MCP_EDGE_WRITE_ROLES`.
 - `MCP_ADMIN_IDENTITY_CONFIGURED`: Set to `true` to declare that the configured PI Web API service account has admin rights, enabling the `pi.meta.server_status` tool. Default is `false` (the tool returns FEATURE_DISABLED).
 - `MCP_LOG_LEVEL`: Log verbosity: `trace` \| `debug` \| `info` \| `warn` \| `error` \| `fatal`. Default is `info`.

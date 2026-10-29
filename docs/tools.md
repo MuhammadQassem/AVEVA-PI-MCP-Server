@@ -63,3 +63,37 @@ Server tools are metadata operations.
 | Tool Name | Description | Upstream Endpoint Mapped |
 |---|---|---|
 | `pi.meta.server_status` | Retrieve status of the MCP server and connections. | `/piwebapi/system/status` (where permitted) |
+
+---
+
+## 5. AF Build Tools (`pi.build.*`)
+
+Create-only (existing objects are skipped). Advertised only when `MCP_BUILD_TOOLS_ENABLED=true` and `MCP_READ_ONLY=false`; limited to `MCP_BUILD_ALLOWED_DATABASES`. See [af-build-tools.md](af-build-tools.md).
+
+| Tool Name | Description | Upstream Endpoint Mapped |
+|---|---|---|
+| `pi.build.apply_plan` | Build a full structure from a plan (dry run by default). | All endpoints below |
+| `pi.build.create_database` | Create an AF database. | `POST /piwebapi/assetservers/{webId}/assetdatabases` |
+| `pi.build.create_category` | Create attribute/element/analysis/table categories. | `POST /piwebapi/assetdatabases/{webId}/{kind}categories` |
+| `pi.build.create_unit` | Create units of measure (and unit classes). | `POST /piwebapi/assetservers/{webId}/unitclasses`, `POST /piwebapi/unitclasses/{webId}/units` |
+| `pi.build.create_table` | Create an AF table and load its data. | `POST /piwebapi/assetdatabases/{webId}/tables`, `PUT /piwebapi/tables/{webId}/data` |
+| `pi.build.create_element_template` | Create an element template (+ attribute/analysis templates). | `POST /piwebapi/assetdatabases/{webId}/elementtemplates` |
+| `pi.build.create_attribute_template` | Add an attribute template. | `POST /piwebapi/elementtemplates/{webId}/attributetemplates` |
+| `pi.build.create_element` | Create an element (+ children, attributes, analyses). | `POST /piwebapi/assetdatabases/{webId}/elements`, `POST /piwebapi/elements/{webId}/elements` |
+| `pi.build.create_attribute` | Add an attribute to an element. | `POST /piwebapi/elements/{webId}/attributes` |
+| `pi.build.create_analysis` | Create an Expression or Rollup analysis / analysis template. | `POST /piwebapi/elements/{webId}/analyses`, `POST /piwebapi/assetdatabases/{webId}/analysistemplates`, `PATCH /piwebapi/analysisrules/{webId}`, `PATCH /piwebapi/timerules/{webId}` |
+| `pi.build.create_pi_points` | Create PI points for PI Point data references. | `POST /piwebapi/elements/{webId}/config` |
+
+---
+
+## 6. AF Modify Tools (`pi.modify.*`)
+
+Change existing objects; never delete; dry run (old → new) by default. Advertised only when `MCP_MODIFY_TOOLS_ENABLED=true` (requires the build tools).
+
+| Tool Name | Description | Upstream Endpoint Mapped |
+|---|---|---|
+| `pi.modify.update_attribute_template` | Rename / change units, type, data reference, config string, categories, flags. | `PATCH /piwebapi/attributetemplates/{webId}` |
+| `pi.modify.update_attribute` | Same, for attributes of individual elements. | `PATCH /piwebapi/attributes/{webId}` |
+| `pi.modify.update_element` | Rename, description, categories, template. | `PATCH /piwebapi/elements/{webId}` |
+| `pi.modify.set_attribute_values` | Set values of static attributes (data-referenced attributes refused). | `PUT /piwebapi/attributes/{webId}/value` |
+| `pi.modify.update_table_data` | Replace an AF table's columns and rows. | `PUT /piwebapi/tables/{webId}/data` |

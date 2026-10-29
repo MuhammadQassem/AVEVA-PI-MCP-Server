@@ -2,6 +2,11 @@
 
 A stateless, zero-trust Model Context Protocol (MCP) server for the AVEVA PI System. This server acts as an intermediary, enabling AI agents and LLM clients to securely query and write time-series archives, AF asset databases, elements, attributes, and summaries using standard tool calls.
 
+**New in 1.1.0 — build and maintain PI AF from chat.** Optional, off-by-default tool groups let an AI assistant *build* AF structures (databases, element templates, attributes, elements, Expression and Rollup analyses, AF tables, units of measure, categories, PI points) — for example straight from an Excel sheet — and *modify* existing AF objects with an old → new dry run. See [§4.D](#d-optional-build-and-maintain-af-structures) and [docs/af-build-tools.md](docs/af-build-tools.md).
+
+> [!NOTE]
+> This repository extends the original [Digital-Enginks/aveva-pisystem-mcp-server](https://github.com/Digital-Enginks/aveva-pisystem-mcp-server) (Apache-2.0). All read, write, auth and security features of the original are unchanged.
+
 ---
 
 ## 1. Architecture Overview
@@ -43,7 +48,7 @@ Paste this prompt into Claude Code, Claude Desktop, Cursor, AmpCode, or any codi
 ```
 Install and configure the AVEVA PI System MCP Server by following the
 instructions here:
-https://raw.githubusercontent.com/Digital-Enginks/aveva-pisystem-mcp-server/refs/heads/main/README.md
+https://raw.githubusercontent.com/MuhammadQassem/AVEVA-PI-MCP-Server/refs/heads/main/README.md
 
 Ask me which PI Web API authentication mode my company uses (Kerberos,
 Basic, Bearer/OIDC, or Anonymous) and whether the PI Web API server uses a
@@ -180,6 +185,30 @@ Choose the configuration block below that matches your company's authentication 
 > **Need help with connection settings?**
 > If you do not know the address of your PI Web API server, client keys, or certificate paths, or if you run into login/authentication errors, **please contact your company's PI System Administrator or IT Support team**. These values are specific to your company's corporate network and can only be provided by your IT department.
 
+### D. Optional: Build and Maintain AF Structures
+
+Two extra tool groups turn the assistant into an AF engineering helper. Both are **off by default** and limited to the AF databases you list.
+
+| Group | Switch | What it can do | Safety |
+|---|---|---|---|
+| **Build** (`pi.build.*`, 11 tools) | `MCP_BUILD_TOOLS_ENABLED=true` | Create AF databases, element templates, attribute templates, elements, attributes, Expression/Rollup analyses, AF tables (with data), units of measure, categories, PI points. `pi.build.apply_plan` builds a whole structure (e.g. converted from Excel) in dependency order. | **Create-only**: existing objects are skipped, never changed. `apply_plan` is a **dry run by default**. |
+| **Modify** (`pi.modify.*`, 5 tools) | `MCP_MODIFY_TOOLS_ENABLED=true` | Rename / change units, types, data references and config strings of attribute templates and attributes; rename elements or change their template; set static attribute values; replace AF table data. | **Never deletes.** Every call is a **dry run by default** that reports old → new. PI Point attributes are refused for value writes. |
+
+Add to your `.env`:
+
+```ini
+MCP_READ_ONLY=false
+MCP_BUILD_TOOLS_ENABLED=true
+# Semicolon-separated databases, or a whole AF server with \\Server\*
+MCP_BUILD_ALLOWED_DATABASES=\\MyAFServer\Sandbox;\\MyAFServer\Plant_A
+# Optional, requires build tools:
+MCP_MODIFY_TOOLS_ENABLED=true
+# Writing PI time-series values stays separate and off:
+MCP_WRITE_TOOLS_ENABLED=false
+```
+
+Then ask your assistant, for example: *"Build this Excel sheet into a new AF database called Plant_A — dry run first."* Details, plan format and known AF limits: [docs/af-build-tools.md](docs/af-build-tools.md).
+
 
 
 ---
@@ -190,6 +219,7 @@ Choose the configuration block below that matches your company's authentication 
 - **Custom trust anchor:** For a PI Web API server using a private or internal CA, provide the PEM CA file via `PIWEBAPI_TLS_CA_FILE`. The server trusts the union of this file and the system's public roots (so public CAs such as AIM still validate).
 - **CSRF header sent by default:** The `X-Requested-With` header is attached to every write request (POST/PUT/PATCH/DELETE); `PIWEBAPI_SEND_CSRF_HEADER=false` disables it only for upstream deployments that reject the header.
 - **Writes are default-deny:** Write-capable tools are off unless both `MCP_READ_ONLY=false` and `MCP_WRITE_TOOLS_ENABLED=true` are set; over the HTTP transport they additionally require inbound edge auth (`MCP_EDGE_AUTH_MODE`) and a caller role matching `MCP_EDGE_WRITE_ROLES`.
+- **AF build/modify tools are default-deny and scoped:** they require `MCP_READ_ONLY=false`, an explicit `MCP_BUILD_ALLOWED_DATABASES` allow-list, and the `stdio` transport. Build tools only create; modify tools never delete and default to a dry run.
 - **Inbound HTTP transport is hardened:** A bearer token or mTLS is required at the edge (`MCP_EDGE_AUTH_MODE`), and `MCP_HTTP_BIND` does not wildcard-bind by default.
 
 See the [Security Recommendations](docs/security/recommendations.md), [Threat Model](docs/security/threat-model.md), and [Inbound Transport guide](docs/security/inbound-transport.md) for the full posture.
@@ -204,6 +234,7 @@ See the [Security Recommendations](docs/security/recommendations.md), [Threat Mo
 - **Threat Model:** See [docs/security/threat-model.md](docs/security/threat-model.md) for the STRIDE threat analysis.
 - **Troubleshooting:** See [docs/troubleshooting.md](docs/troubleshooting.md) for debugging guides and common error resolutions.
 - **Tool Catalog:** See [docs/tools.md](docs/tools.md) for details on namespaced tools and JSON schemas.
+- **AF Build & Modify Guide:** See [docs/af-build-tools.md](docs/af-build-tools.md) for the plan format, Excel workflow, examples and AF limits.
 
 ---
 
@@ -224,4 +255,4 @@ A CycloneDX **SBOM** is attached to each GitHub Release for downstream vulnerabi
 - **License:** Licensed under the Apache License, Version 2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
 - **Contributing:** Contributor guidelines and DCO sign-offs are in [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Vulnerability Disclosure:** Security policy and reporting channels are defined in [SECURITY.md](SECURITY.md).
-- **Contact & Support:** Maintained by **Oscar Ortiz** ([@oscarinom](https://github.com/oscarinom)). For support or custom OT integrations, email: `oscar.ortiz@denginks.com`.
+- **Contact & Support:** Original server by **Oscar Ortiz** ([@oscarinom](https://github.com/oscarinom)), `oscar.ortiz@denginks.com`. AF build/modify extensions (1.1.0) by **Muhammad Qassem** ([@MuhammadQassem](https://github.com/MuhammadQassem)) — please open issues for this version at [MuhammadQassem/AVEVA-PI-MCP-Server](https://github.com/MuhammadQassem/AVEVA-PI-MCP-Server/issues).
