@@ -22,6 +22,13 @@ function assertWebId(webId) {
   }
 }
 
+// PI Web API sends one WWW-Authenticate header per enabled method (e.g.
+// Negotiate and Basic); undici then returns an array, so pick the Negotiate one.
+export function pickNegotiateChallenge(header) {
+  const values = Array.isArray(header) ? header : (header ? [header] : []);
+  return values.find(v => typeof v === 'string' && v.trim().toLowerCase().startsWith('negotiate')) || null;
+}
+
 export class PiWebApiClient extends PiGatewayPort {
   #config;
   #logger;
@@ -246,8 +253,8 @@ export class PiWebApiClient extends PiGatewayPort {
         const mode = this.#config.PIWEBAPI_AUTH_MODE;
 
         if (mode === 'kerberos') {
-          const wwwAuth = response.headers['www-authenticate'] || response.headers['WWW-Authenticate'];
-          if (wwwAuth && wwwAuth.toLowerCase().startsWith('negotiate')) {
+          const wwwAuth = pickNegotiateChallenge(response.headers['www-authenticate'] || response.headers['WWW-Authenticate']);
+          if (wwwAuth) {
             await response.body.dump();
 
             let krbClient = null;
@@ -286,7 +293,7 @@ export class PiWebApiClient extends PiGatewayPort {
               }
 
               await loopResponse.body.dump();
-              currentWwwAuth = loopResponse.headers['www-authenticate'] || loopResponse.headers['WWW-Authenticate'];
+              currentWwwAuth = pickNegotiateChallenge(loopResponse.headers['www-authenticate'] || loopResponse.headers['WWW-Authenticate']);
               
               if (negotiateRes.isComplete) {
                 response = loopResponse;
